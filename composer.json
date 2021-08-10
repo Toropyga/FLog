@@ -1,0 +1,26 @@
+{
+    "name": "toropyga/flog",
+    "description": "Libraries for logging from Toropyga",
+    "authors": [
+        {
+            "name": "Yuri Frantsevich",
+            "email": "frantsevich@gmail.com",
+            "homepage": "https://github.com/Toropyga/FLog",
+            "role": "Developer"
+        }
+    ],
+    "license": "MIT",
+    "require": {
+        "php": ">=5.1.0",
+        "ext-fileinfo": "*"
+    },
+    "require-dev": {
+
+    },
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "FYN\\": "src/"
+        }
+    }
+}
