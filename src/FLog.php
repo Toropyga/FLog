@@ -4,10 +4,13 @@
  * @author Yuri Frantsevich (FYN)
  * Date: 15/01/2018
  * Time: 17:17
- * @version 2.0.0
+ * @version 2.0.1
  * @copyright 2018-2021
  */
+
 namespace FYN;
+
+use FYN\Base;
 
 class FLog {
 
@@ -120,7 +123,7 @@ class FLog {
         $i = $i/36;
         $k = ($i>0)?'+':'-';
         $i = $k.sprintf("%04d", $i);
-        $ip = $this->getIP();
+        $ip = Base::getIP();
         $agent = (isset($_SERVER['HTTP_USER_AGENT']))?$_SERVER['HTTP_USER_AGENT']:'USER AGENT NOT DEFINED';
         $uri = (isset($_SERVER['REQUEST_URI']))?$_SERVER['REQUEST_URI']:'REQUEST URI NOT DEFINED';
         $text = $ip['ip']." - ".date("[d/M/Y H:i:s $i]")." - ".$uri." - \"".$agent.'"';
@@ -207,33 +210,6 @@ class FLog {
                 else rename($path, $path_index.SEPARATOR.$file.date('Ymd', filemtime($path)).$rs);
             }
         }
-    }
-
-    /**
-     * Определение IP адреса с которого открывается страница
-     * @return mixed
-     */
-    public function getIP () {
-        $ipn = (isset($_SERVER['REMOTE_ADDR']))?$_SERVER['REMOTE_ADDR']:'';
-        if (!$ipn) $ipn = urldecode(getenv('HTTP_CLIENT_IP'));
-        if (getenv('HTTP_X_FORWARDED_FOR') && strcasecmp(getenv("HTTP_X_FORWARDED_FOR"), "unknown")) $strIP = getenv('HTTP_X_FORWARDED_FOR');
-        elseif (getenv('HTTP_X_FORWARDED') && strcasecmp(getenv("HTTP_X_FORWARDED"), "unknown")) $strIP = getenv('HTTP_X_FORWARDED');
-        elseif (getenv('HTTP_FORWARDED_FOR') && strcasecmp(getenv("HTTP_FORWARDED_FOR"), "unknown")) $strIP = getenv('HTTP_FORWARDED_FOR');
-        elseif (getenv('HTTP_FORWARDED') && strcasecmp(getenv("HTTP_FORWARDED"), "unknown")) $strIP = getenv('HTTP_FORWARDED');
-        else $strIP = (isset($_SERVER['REMOTE_ADDR']))?$_SERVER['REMOTE_ADDR']:'127.0.0.1';
-        if ($ipn == '::1') $ipn = '127.0.0.1';
-        if ($strIP == '::1') $strIP = '127.0.0.1';
-        if (!preg_match("/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/", $ipn)) $ipn = '';
-        if (!preg_match("/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/", $strIP)) $strIP = $ipn;
-        if ($strIP != $ipn) {
-            $ip['proxy'] = $ipn;
-            $ip['ip'] = $strIP;
-        }
-        else {
-            $ip['proxy'] = '';
-            $ip['ip'] = $ipn;
-        }
-        return $ip;
     }
 }
 
