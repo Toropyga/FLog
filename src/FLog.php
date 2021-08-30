@@ -4,7 +4,7 @@
  * @author Yuri Frantsevich (FYN)
  * Date: 15/01/2018
  * Time: 17:17
- * @version 2.1.3
+ * @version 2.1.4
  * @copyright 2018-2021
  */
 
@@ -42,13 +42,13 @@ class FLog {
      * Директория в которой создаётся директория логов
      * @var string
      */
-    private $root_dir = '';
+    private $path = '';
 
     /**
      * Путь к корневой директории, по умолчанию - корневая директория сайта
      * @var string
      */
-    private $path = '';
+    private $root_dir = '';
 
     /**
      * Путь к текущей папке относительно корневой директории
@@ -77,10 +77,10 @@ class FLog {
             $separator = getenv("COMSPEC")? '\\' : '/';
             define("SEPARATOR", $separator);
         }
-        if (defined('LOG_ROOT_PATH')) $this->path = LOG_ROOT_PATH;
-        elseif (defined('ROOT_PATH')) $this->path = ROOT_PATH;
-        if (!$this->path || !file_exists($this->path)) {
-            if (isset($_SERVER['DOCUMENT_ROOT']) && $_SERVER['DOCUMENT_ROOT']) $this->path = preg_replace("/\/$/", '', $_SERVER['DOCUMENT_ROOT']);
+        if (defined('LOG_ROOT_PATH')) $this->root_dir = LOG_ROOT_PATH;
+        elseif (defined('ROOT_PATH')) $this->root_dir = ROOT_PATH;
+        if (!$this->root_dir || !file_exists($this->root_dir)) {
+            if (isset($_SERVER['DOCUMENT_ROOT']) && $_SERVER['DOCUMENT_ROOT']) $this->root_dir = preg_replace("/\/$/", '', $_SERVER['DOCUMENT_ROOT']);
             else {
                 $this_file_path = dirname(__FILE__);
                 // !!! Warning !!! Check your folder path!
@@ -89,14 +89,14 @@ class FLog {
                 if ($this_folder_path) {
                     $this_folder_path = str_replace("\\", "/", $this_folder_path);
                     $this_folder_path = preg_replace("/^\//", '', $this_folder_path);
-                    $this->path = str_replace("$this_folder_path", '', $this_file_path);
+                    $this->root_dir = str_replace("$this_folder_path", '', $this_file_path);
                 }
-                else $this->path = $this_folder_path;
+                else $this->root_dir = $this_folder_path;
             }
             $repl_separator = getenv("COMSPEC")? '/' : '\\';
-            $this->path = str_replace("$repl_separator", SEPARATOR, $this->path);
+            $this->root_dir = str_replace("$repl_separator", SEPARATOR, $this->root_dir);
         }
-        if (defined('LOG_PATH')) $this->root_dir = LOG_PATH;
+        if (defined('LOG_PATH')) $this->path = LOG_PATH;
         if (defined('LOG_DIR')) $this->log_dir = LOG_DIR;
         if (defined('LOG_NAME')) $this->file = LOG_NAME;
         if (defined('LOG_SIZE')) $this->max_size = LOG_SIZE;
@@ -121,8 +121,8 @@ class FLog {
         if (count($this->LOG)) {
             foreach ($this->LOG as $file => $logs) {
                 $this->checkFiles($file);
-                $path_index = $this->path;
-                if ($this->root_dir) $path_index = $path_index.SEPARATOR.$this->root_dir;
+                $path_index = $this->root_dir;
+                if ($this->path) $path_index = $path_index.SEPARATOR.$this->path;
                 if ($this->log_dir) $path_index = $path_index.SEPARATOR.$this->log_dir;
                 $path = $path_index.SEPARATOR.$file; // Путь к файлу логов
                 // Создаём, или открываем для записи файл логов
@@ -201,8 +201,8 @@ class FLog {
      * @return bool
      */
     private function checkDir () {
-        $path_index = $this->path;
-        if ($this->root_dir) $path_index = $path_index.SEPARATOR.$this->root_dir;
+        $path_index = $this->root_dir;
+        if ($this->path) $path_index = $path_index.SEPARATOR.$this->path;
         if (!is_dir($path_index)) {
             if (mkdir($path_index, 0755)) chmod($path_index, 0755);
             else {
@@ -239,8 +239,8 @@ class FLog {
      */
     private function checkFiles ($file = '') {
         if (!$file) $file = $this->file;
-        $path_index = $this->path;
-        if ($this->root_dir) $path_index = $path_index.SEPARATOR.$this->root_dir;
+        $path_index = $this->root_dir;
+        if ($this->path) $path_index = $path_index.SEPARATOR.$this->path;
         if ($this->log_dir) $path_index = $path_index.SEPARATOR.$this->log_dir;
         $path = $path_index.SEPARATOR.$file; // Путь к файлу логов
         // Проверяем размер файла логов, если более указанного в настройках - переименовываем
