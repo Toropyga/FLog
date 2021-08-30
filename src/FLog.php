@@ -4,7 +4,7 @@
  * @author Yuri Frantsevich (FYN)
  * Date: 15/01/2018
  * Time: 17:17
- * @version 2.0.1
+ * @version 2.1.0
  * @copyright 2018-2021
  */
 
@@ -131,6 +131,31 @@ class FLog {
     }
 
     /**
+     * Запись массива в лог по имени сохраняемого файла
+     * @param array $array - массив логов
+     * @return mixed
+     */
+    public function setArray2Log ($array) {
+        if (!is_array($array)) {
+            $this->set2Log($array);
+            return true;
+        }
+        if (isset($array['file'])) {
+            $file = $array['file'];
+            unset($array['file']);
+        }
+        else $file = $this->file;
+        if (isset($array['log'])) $logs = $array['log'];
+        elseif (isset($array['logs'])) $logs = $array['logs'];
+        else $logs = $array;
+        if (!is_string($logs)) {
+            foreach ($logs as $text) $this->set2Log($text, $file);
+        }
+        else $this->set2Log($logs, $file);
+        return true;
+    }
+
+    /**
      * Запись логов в массив по имени сохраняемого файла
      * @param $text - текст лога
      * @param string $file - файл в который записываем
@@ -139,6 +164,7 @@ class FLog {
         if (!$file) $file = $this->file;
         if (!isset($this->LOG[$file]) || !is_array($this->LOG[$file])) $this->LOG[$file] = array();
         $i = count($this->LOG[$file]);
+        if (!is_string($text)) $text = print_r($text, true);
         $this->LOG[$file][$i] = $this->init();
         $this->LOG[$file][$i] .= " - ".$text;
         $this->LOG[$file][$i] .= $this->rn;
