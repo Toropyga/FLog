@@ -4,7 +4,7 @@
  * @author Yuri Frantsevich (FYN)
  * Date: 15/01/2018
  * Time: 17:17
- * @version 2.1.2
+ * @version 2.1.3
  * @copyright 2018-2021
  */
 
@@ -51,6 +51,12 @@ class FLog {
     private $path = '';
 
     /**
+     * Путь к текущей папке относительно корневой директории
+     * @var string
+     */
+    private $folder_path = 'vendor/toropyga/flog/src';
+
+    /**
      * Текст лога
      * @var array
      */
@@ -67,14 +73,18 @@ class FLog {
      * Log constructor.
      */
     public function __construct() {
-        if (defined('LOG_ROOT_PATH')) $this->path = LOG_ROOT_PATH;
-        if (!$this->path || !file_exists($this->path)) {
+        if (!defined('SEPARATOR')) {
             $separator = getenv("COMSPEC")? '\\' : '/';
-            if (isset($_SERVER['DOCUMENT_ROOT'])) $this->path = preg_replace("/\/$/", '', $_SERVER['DOCUMENT_ROOT']);
+            define("SEPARATOR", $separator);
+        }
+        if (defined('LOG_ROOT_PATH')) $this->path = LOG_ROOT_PATH;
+        elseif (defined('ROOT_PATH')) $this->path = ROOT_PATH;
+        if (!$this->path || !file_exists($this->path)) {
+            if (isset($_SERVER['DOCUMENT_ROOT']) && $_SERVER['DOCUMENT_ROOT']) $this->path = preg_replace("/\/$/", '', $_SERVER['DOCUMENT_ROOT']);
             else {
                 $this_file_path = dirname(__FILE__);
                 // !!! Warning !!! Check your folder path!
-                $this_folder_path = 'vendor/toropyga/flog/src'; // путь к текущей папке относительно корневой директории
+                $this_folder_path = $this->folder_path; // путь к текущей папке относительно корневой директории
                 $this_file_path = str_replace("\\", '/', $this_file_path);
                 if ($this_folder_path) {
                     $this_folder_path = str_replace("\\", "/", $this_folder_path);
@@ -84,7 +94,7 @@ class FLog {
                 else $this->path = $this_folder_path;
             }
             $repl_separator = getenv("COMSPEC")? '/' : '\\';
-            $this->path = str_replace("$repl_separator", $separator, $this->path);
+            $this->path = str_replace("$repl_separator", SEPARATOR, $this->path);
         }
         if (defined('LOG_PATH')) $this->root_dir = LOG_PATH;
         if (defined('LOG_DIR')) $this->log_dir = LOG_DIR;
@@ -94,10 +104,6 @@ class FLog {
         if (!$this->file) $this->file = 'site.log';
         if (!$this->max_size < 1) $this->max_size = 1;
         if (!$this->days < 1) $this->days = 1;
-        if (!defined('SEPARATOR')) {
-            $separator = getenv("COMSPEC")? '\\' : '/';
-            define("SEPARATOR", $separator);
-        }
         $this->checkDir();
     }
 
