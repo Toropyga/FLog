@@ -4,7 +4,7 @@
  * @author Yuri Frantsevich (FYN)
  * Date: 15/01/2018
  * Time: 17:17
- * @version 2.1.1
+ * @version 2.1.2
  * @copyright 2018-2021
  */
 
@@ -79,7 +79,7 @@ class FLog {
                 if ($this_folder_path) {
                     $this_folder_path = str_replace("\\", "/", $this_folder_path);
                     $this_folder_path = preg_replace("/^\//", '', $this_folder_path);
-                    $this->path = preg_replace("/\/$this_folder_path/", '', $this_file_path);
+                    $this->path = str_replace("$this_folder_path", '', $this_file_path);
                 }
                 else $this->path = $this_folder_path;
             }
