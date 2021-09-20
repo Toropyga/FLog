@@ -72,35 +72,35 @@ $file = "file_log_name";
 ```php
 $LOG->setFileName($file);
 ```
-Сохраняем лог уровня debug
+Сохраняем лог уровня **debug**
 ```php
 $LOG->debug($log, $context);
 ```
-Сохраняем лог уровня info
+Сохраняем лог уровня **info**
 ```php
 $LOG->info($log, $context);
 ```
-Сохраняем лог уровня notice
+Сохраняем лог уровня **notice**
 ```php
 $LOG->notice($log, $context);
 ```
-Сохраняем лог уровня warning
+Сохраняем лог уровня **warning**
 ```php
 $LOG->warning($log, $context);
 ```
-Сохраняем лог уровня error
+Сохраняем лог уровня **error**
 ```php
 $LOG->error($log, $context);
 ```
-Сохраняем лог уровня critical
+Сохраняем лог уровня **critical**
 ```php
 $LOG->critical($log, $context);
 ```
-Сохраняем лог уровня alert
+Сохраняем лог уровня **alert**
 ```php
 $LOG->alert($log, $context);
 ```
-Сохраняем лог уровня emergency
+Сохраняем лог уровня **emergency**
 ```php
 $LOG->emergency($log, $context);
 ```
