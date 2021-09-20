@@ -2,8 +2,8 @@
 Класс логирования
 
 ![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)
-![Version](https://img.shields.io/badge/version-v2.2.0-blue.svg)
-![PHP](https://img.shields.io/badge/php-v5.5_--_v8-blueviolet.svg)
+![Version](https://img.shields.io/badge/version-v2.2.1-blue.svg)
+![PHP](https://img.shields.io/badge/php-v7.1_--_v8-blueviolet.svg)
 
 ## Содержание
 
@@ -13,6 +13,7 @@
 - [Описание работы](#описание-работы)
     - [Подключение файла класса](#Подключение-файла-класса)
     - [Инициализация класса](#Инициализация-класса)
+    - [Настройка параметров](#Настройка-параметров)
     - [Сохранение строки логов](#Сохранение-строки-логов)
     - [Сохранение массива логов](#Сохранение-массива-логов)
     
@@ -33,8 +34,8 @@ composer require toropyga/flog
 ```
 
 ## Настройка
-Предварительная настройка параметров по умолчанию может осуществлятся или непосредственно в самом классе, или с помощью именованных констант.
-Именованные константы при необходимости обявляются до вызова класса, например, в конфигурационном файле, и определяют параметры по умолчанию.
+Предварительная настройка параметров по умолчанию может осуществляться или непосредственно в самом классе, или с помощью именованных констант.
+Именованные константы при необходимости объявляются до вызова класса, например, в конфигурационном файле, и определяют параметры по умолчанию.
 * LOG_ROOT_PATH - путь к корневой директории сайта, по умолчанию - текущая директория;
 * LOG_PATH - имя директории в которой создаётся директория логов;
 * LOG_DIR - имя директории логов;
@@ -61,75 +62,92 @@ require_once("vendor/autoload.php");
 $LOG = new FYN\FLog();
 ```
 ---
+### Настройка параметров
+Настройка объёма служебной информации в логе.
+Может принимать значения:
+* **simple** - date, level, uri
+* **advanced** - ip, date, level, uri
+* **full** - ip, date, level, uri, user agent
+```php
+$LOG->setSystemInfo('advanced');
+```
+---
+Установка уровня логов.
+Может принимать значения: emergency, alert, critical, error, warning, notice, info, debug 
+```php
+$LOG->setLogLevel('error');
+```
+---
+Установка имени файла для записи логов
+```php
+$LOG->setFileName ($file)
+```
+---
+
+
 ### Сохранение строки логов
 Предварительные данные лога
 ```php
 $log = "log text";
 $context = array("other" => "Other information"); // необязательный параметр
-$file = "file_log_name";
 ```
-Задаём имя файла логов
-```php
-$LOG->setFileName($file);
-```
-Сохраняем лог уровня **debug**
+
+Лог уровня **debug**
 ```php
 $LOG->debug($log, $context);
 ```
-Сохраняем лог уровня **info**
+Лог уровня **info**
 ```php
 $LOG->info($log, $context);
 ```
-Сохраняем лог уровня **notice**
+Лог уровня **notice**
 ```php
 $LOG->notice($log, $context);
 ```
-Сохраняем лог уровня **warning**
+Лог уровня **warning**
 ```php
 $LOG->warning($log, $context);
 ```
-Сохраняем лог уровня **error**
+Лог уровня **error**
 ```php
 $LOG->error($log, $context);
 ```
-Сохраняем лог уровня **critical**
+Лог уровня **critical**
 ```php
 $LOG->critical($log, $context);
 ```
-Сохраняем лог уровня **alert**
+Лог уровня **alert**
 ```php
 $LOG->alert($log, $context);
 ```
-Сохраняем лог уровня **emergency**
+Лог уровня **emergency**
 ```php
 $LOG->emergency($log, $context);
 ```
+---
 Также возможен общий вариант с указанием уровня логов
 ```php
 $level = "debug";
 $log = "log text";
-$file = "file_log_name";
-$LOG->setFileName($file); // задаём, если необходимо, имя файла логов
 $LOG->log($level, $log); // сохраняем лог
 ```
+---
 Можно использовать устаревший вариант
 ```php
-$level = "debug";
 $log = "log text";
 $file = "file_log_name";
-$LOG->setLevel($level); // устанавливаем, если необходимо, уровень логов
 $LOG->set2Log($log, $file); // сохраняем лог
 ```
 ---
 ### Сохранение массива логов
 ```php
+$LOG->setLevel('debug'); // устанавливаем, если необходимо, уровень логов
+
 $logs = array();
 $logs['log'][] = "log text line 1";
 $logs['log'][] = "log text line 2";
 $logs['log'][] = "log text line 3";
 $logs['file'] = "file_log_name";
-$level = "debug";
-$LOG->setLevel($level); // устанавливаем, если необходимо, уровень логов
 $LOG->setArray2Log($logs); // сохраняем лог
 ```
----
+

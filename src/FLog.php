@@ -2,7 +2,7 @@
 /**
  * Класс логирования
  * @author Yuri Frantsevich (FYN)
- * @version 2.2.0
+ * @version 2.2.1
  * @copyright 2018-2021
  */
 
@@ -51,6 +51,7 @@ class FLog implements LoggerInterface {
 
     /**
      * Путь к текущей папке относительно корневой директории
+     * !!! Warning !!! Check your folder path!
      * @var string
      */
     private $folder_path = 'vendor/toropyga/flog/src';
@@ -80,10 +81,25 @@ class FLog implements LoggerInterface {
     private $rn = PHP_EOL;
 
     /**
+     * Разделитель блоков лога
+     * @var string
+     */
+    private $separator = " - ";
+
+    /**
+     * Объём служебной информации в логе:
+     *   simple     - date, level, uri
+     *   advanced   - ip, date, level, uri
+     *   full       - ip, date, level, uri, user agent
+     * @var string
+     */
+    private $system_info = 'full'; // simple, advanced, full
+
+    /**
      * Конструктор класса логирования
      * Log constructor.
      */
-    public function __construct() {
+    public function __construct () {
         if (!defined('SEPARATOR')) {
             $separator = getenv("COMSPEC")? '\\' : '/';
             define("SEPARATOR", $separator);
@@ -114,6 +130,7 @@ class FLog implements LoggerInterface {
         if (defined('LOG_TIME')) $this->days = LOG_TIME;
         if (defined('LOG_LEVEL')) $this->setLogLevel(LOG_LEVEL);
         if (defined('LOG_SAVE_NOW')) $this->saveNow = (bool)LOG_SAVE_NOW;
+        if (defined('LOG_SYSTEM_INFO')) $this->setSystemInfo(LOG_SYSTEM_INFO);
         if (!$this->fileName) $this->fileName = 'site.log';
         if (!$this->max_size < 1) $this->max_size = 1;
         if (!$this->days < 1) $this->days = 1;
@@ -123,7 +140,7 @@ class FLog implements LoggerInterface {
     /**
      * Деструктор класса логирования
      */
-    public function __destruct() {
+    public function __destruct () {
         if (!$this->saveNow) $this->saveLog();
     }
 
@@ -132,7 +149,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function emergency($message, array $context = array()) {
+    public function emergency ($message, array $context = array()) {
         $this->log(LogLevel::EMERGENCY, $message, $context);
     }
 
@@ -141,7 +158,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function alert($message, array $context = array()) {
+    public function alert ($message, array $context = array()) {
         $this->log(LogLevel::ALERT, $message, $context);
     }
 
@@ -150,7 +167,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function critical($message, array $context = array()) {
+    public function critical ($message, array $context = array()) {
         $this->log(LogLevel::CRITICAL, $message, $context);
     }
 
@@ -159,7 +176,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function error($message, array $context = array()) {
+    public function error ($message, array $context = array()) {
         $this->log(LogLevel::ERROR, $message, $context);
     }
 
@@ -168,7 +185,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function warning($message, array $context = array()) {
+    public function warning ($message, array $context = array()) {
         $this->log(LogLevel::WARNING, $message, $context);
     }
 
@@ -177,7 +194,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function notice($message, array $context = array()) {
+    public function notice ($message, array $context = array()) {
         $this->log(LogLevel::NOTICE, $message, $context);
     }
 
@@ -186,7 +203,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function info($message, array $context = array()) {
+    public function info ($message, array $context = array()) {
         $this->log(LogLevel::INFO, $message, $context);
     }
 
@@ -195,7 +212,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function debug($message, array $context = array()) {
+    public function debug ($message, array $context = array()) {
         $this->log(LogLevel::DEBUG, $message, $context);
     }
 
@@ -205,37 +222,44 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function log($level, $message, array $context = array()) {
+    public function log ($level, $message, array $context = array()) {
         $this->setLogLevel($level);
+        list($message, $context) = $this->interpolate($message, $context);
         if (sizeof($context) > 0) {
-            foreach ($context as $key => $line) $message .= " - $key => ".print_r($line, true);
+            foreach ($context as $key => $line) {
+                if (preg_match("/^\d+$/", $key)) $message .= $this->separator.print_r($line, true);
+                else $message .= " - $key: ".print_r($line, true);
+            }
         }
         $this->set2Log($message);
     }
 
     /**
-     * Установка уровня логов
-     * @param string $level
+     * Предварительная обработка сообщения
+     * Замена вставок вида {key} в тексте сообщения на данные из массива context array("key" => "value")
+     * @param string $message - основной текст лога
+     * @param array $context - дополнительные данные
+     * @return array
      */
-    public function setLogLevel ($level) {
-        $level = mb_strtolower($level);
-        if (in_array($level, LogLevel::$logLevels)) {
-            $this->loglevel = $level;
+    private function interpolate ($message, array $context = array()) {
+        // build a replacement array with braces around the context keys
+        $replace = array();
+        foreach ($context as $key => $val) {
+            // check that the value can be cast to string
+            if (!is_array($val) && (!is_object($val) || method_exists($val, '__toString'))) {
+                $repl = '{' . $key . '}';
+                $replace[$repl] = $val;
+                if (preg_match("/$repl/", $message)) unset($context[$key]);
+            }
         }
-    }
-
-    /**
-     * Установка имени файла для записи логов
-     * @param string $file
-     */
-    public function setFileName ($file) {
-        if ($file) $this->fileName = $file;
+        // interpolate replacement values into the message and return
+        return array(strtr($message, $replace), $context);
     }
 
     /**
      * Сохраняем все логи в файлы
      */
-    public function saveLog() {
+    private function saveLog () {
         if (count($this->LOG)) {
             foreach ($this->LOG as $file => $logs) {
                 if (is_array($logs)) foreach ($logs as $log) $this->save2File($file, $log);
@@ -275,15 +299,51 @@ class FLog implements LoggerInterface {
      * Генерация информации о дате и времени записи лога для начала строки
      * @return string
      */
-    private function init () {
-        $i = date('Z');
-        $i = $i/36;
-        $k = ($i>0)?'+':'-';
-        $i = $k.sprintf("%04d", $i);
-        $ip = Base::getIP();
-        $agent = (isset($_SERVER['HTTP_USER_AGENT']))?$_SERVER['HTTP_USER_AGENT']:'USER AGENT NOT DEFINED';
+    private function getInit () {
+        $zone = date('Z');
+        $zone = $zone/36;
+        $k = ($zone>0)?'+':'-';
+        $zone = $k.sprintf("%04d", $zone);
         $uri = (isset($_SERVER['REQUEST_URI']))?$_SERVER['REQUEST_URI']:'REQUEST URI NOT DEFINED';
-        return $ip['ip']." - ".date("[d/M/Y H:i:s $i]")." ".mb_strtoupper($this->loglevel)." - ".$uri." - \"".$agent.'"';
+        $return = date("[d/M/Y H:i:s $zone]")." ".mb_strtoupper($this->loglevel).$this->separator.$uri;
+        if (in_array($this->system_info, array('full', 'advanced'))) {
+            $ip = Base::getIP();
+            $return = $ip['ip'].$this->separator.$return;
+            if ($this->system_info == 'full') {
+                $agent = (isset($_SERVER['HTTP_USER_AGENT']))?$_SERVER['HTTP_USER_AGENT']:'USER AGENT NOT DEFINED';
+                $return .= $this->separator."\"".$agent.'"';
+            }
+        }
+        return $return;
+    }
+
+    /**
+     * Параметр объёма служебной информации в логе
+     * @param string $system_info - объём служебной информации в логе ('full', 'advanced', 'simple')
+     */
+    public function setSystemInfo ($system_info) {
+        if (in_array($system_info, array('full', 'advanced', 'simple'))) {
+            $this->system_info = $system_info;
+        }
+    }
+
+    /**
+     * Установка уровня логов
+     * @param string $level
+     */
+    public function setLogLevel ($level) {
+        $level = mb_strtolower($level);
+        if (in_array($level, LogLevel::$logLevels)) {
+            $this->loglevel = $level;
+        }
+    }
+
+    /**
+     * Установка имени файла для записи логов
+     * @param string $file
+     */
+    public function setFileName ($file) {
+        if ($file) $this->fileName = $file;
     }
 
     /**
@@ -323,7 +383,7 @@ class FLog implements LoggerInterface {
         if (!isset($this->LOG[$file]) || !is_array($this->LOG[$file])) $this->LOG[$file] = array();
         $i = count($this->LOG[$file]);
         if (!is_string($text)) $text = print_r($text, true);
-        $log = $this->init();
+        $log = $this->getInit();
         $log .= " - ".$text;
         $log .= $this->rn;
         if ($this->saveNow) $this->save2File($file, $log);

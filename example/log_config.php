@@ -1,4 +1,8 @@
 <?php
+/**
+ * Пример подключаемого файла конфигурации логов
+ */
+
 //      +------------------------------------------+
 //      |          Настройка логирования           |
 //      +------------------------------------------+
@@ -51,6 +55,15 @@ $config['log_level'] = 'error';
  */
 $config['log_save_now'] = true;
 
+/**
+ * Объём служебной информации в логе:
+ *   'simple'     - date, level, uri
+ *   'advanced'   - ip, date, level, uri
+ *   'full'       - ip, date, level, uri, user agent
+ * @var string
+ */
+$config['log_system_info'] = 'full';
+
 
 //---------------------------------------//
 //  Сохранение в статические переменные  //
@@ -64,3 +77,4 @@ if (!defined('LOG_SIZE')) define('LOG_SIZE', $config['log_size']);
 if (!defined('LOG_TIME')) define('LOG_TIME', $config['log_time']);
 if (!defined('LOG_LEVEL')) define('LOG_LEVEL', $config['log_level']);
 if (!defined('LOG_SAVE_NOW')) define('LOG_SAVE_NOW', $config['log_save_now']);
+if (!defined('LOG_SYSTEM_INFO')) define('LOG_SYSTEM_INFO', $config['log_system_info']);
