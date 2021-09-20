@@ -13,7 +13,8 @@
     "require": {
         "php": ">=5.1.0",
         "toropyga/base": "*",
-        "ext-fileinfo": "*"
+        "ext-fileinfo": "*",
+        "ext-mbstring": "*"
     },
     "require-dev": {
 

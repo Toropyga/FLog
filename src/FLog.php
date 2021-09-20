@@ -2,17 +2,16 @@
 /**
  * Класс логирования
  * @author Yuri Frantsevich (FYN)
- * Date: 15/01/2018
- * Time: 17:17
- * @version 2.1.4
+ * @version 2.2.0
  * @copyright 2018-2021
  */
 
 namespace FYN;
 
 use FYN\Base;
+use Exception;
 
-class FLog {
+class FLog implements LoggerInterface {
 
     /**
      * Количество дней на протяжении которых сохраняются логи
@@ -30,7 +29,7 @@ class FLog {
      * Имя файла логов
      * @var string
      */
-    private $file = 'site.log';
+    private $fileName = 'site.log';
 
     /**
      * Директория логов
@@ -55,6 +54,18 @@ class FLog {
      * @var string
      */
     private $folder_path = 'vendor/toropyga/flog/src';
+
+    /**
+     * Уровень лога
+     * @var string
+     */
+    private $loglevel = 'error';
+
+    /**
+     * Сохранять в лог сразу или по окончании работы
+     * @var bool
+     */
+    private $saveNow = false;
 
     /**
      * Текст лога
@@ -98,20 +109,127 @@ class FLog {
         }
         if (defined('LOG_PATH')) $this->path = LOG_PATH;
         if (defined('LOG_DIR')) $this->log_dir = LOG_DIR;
-        if (defined('LOG_NAME')) $this->file = LOG_NAME;
+        if (defined('LOG_NAME')) $this->fileName = LOG_NAME;
         if (defined('LOG_SIZE')) $this->max_size = LOG_SIZE;
         if (defined('LOG_TIME')) $this->days = LOG_TIME;
-        if (!$this->file) $this->file = 'site.log';
+        if (defined('LOG_LEVEL')) $this->setLogLevel(LOG_LEVEL);
+        if (defined('LOG_SAVE_NOW')) $this->saveNow = (bool)LOG_SAVE_NOW;
+        if (!$this->fileName) $this->fileName = 'site.log';
         if (!$this->max_size < 1) $this->max_size = 1;
         if (!$this->days < 1) $this->days = 1;
-        $this->checkDir();
+        if (!$this->checkDir()) exit;
     }
 
     /**
      * Деструктор класса логирования
      */
     public function __destruct() {
-        $this->saveLog();
+        if (!$this->saveNow) $this->saveLog();
+    }
+
+    /**
+     * Сохранение лога уровня emergency - чрезвычайная
+     * @param string $message - основной текст лога
+     * @param array $context - дополнительные данные
+     */
+    public function emergency($message, array $context = array()) {
+        $this->log(LogLevel::EMERGENCY, $message, $context);
+    }
+
+    /**
+     * Сохранение лога уровня alert - предупреждение
+     * @param string $message - основной текст лога
+     * @param array $context - дополнительные данные
+     */
+    public function alert($message, array $context = array()) {
+        $this->log(LogLevel::ALERT, $message, $context);
+    }
+
+    /**
+     * Сохранение лога уровня critical- критическая
+     * @param string $message - основной текст лога
+     * @param array $context - дополнительные данные
+     */
+    public function critical($message, array $context = array()) {
+        $this->log(LogLevel::CRITICAL, $message, $context);
+    }
+
+    /**
+     * Сохранение лога уровня error - ошибка
+     * @param string $message - основной текст лога
+     * @param array $context - дополнительные данные
+     */
+    public function error($message, array $context = array()) {
+        $this->log(LogLevel::ERROR, $message, $context);
+    }
+
+    /**
+     * Сохранение лога уровня warning - предупреждение
+     * @param string $message - основной текст лога
+     * @param array $context - дополнительные данные
+     */
+    public function warning($message, array $context = array()) {
+        $this->log(LogLevel::WARNING, $message, $context);
+    }
+
+    /**
+     * Сохранение лога уровня notice - уведомление
+     * @param string $message - основной текст лога
+     * @param array $context - дополнительные данные
+     */
+    public function notice($message, array $context = array()) {
+        $this->log(LogLevel::NOTICE, $message, $context);
+    }
+
+    /**
+     * Сохранение лога уровня info - информация
+     * @param string $message - основной текст лога
+     * @param array $context - дополнительные данные
+     */
+    public function info($message, array $context = array()) {
+        $this->log(LogLevel::INFO, $message, $context);
+    }
+
+    /**
+     * Сохранение лога уровня debug - отладка
+     * @param string $message - основной текст лога
+     * @param array $context - дополнительные данные
+     */
+    public function debug($message, array $context = array()) {
+        $this->log(LogLevel::DEBUG, $message, $context);
+    }
+
+    /**
+     * Сохраняем данные в лог
+     * @param string $level - уровень лога
+     * @param string $message - основной текст лога
+     * @param array $context - дополнительные данные
+     */
+    public function log($level, $message, array $context = array()) {
+        $this->setLogLevel($level);
+        if (sizeof($context) > 0) {
+            foreach ($context as $key => $line) $message .= " - $key => ".print_r($line, true);
+        }
+        $this->set2Log($message);
+    }
+
+    /**
+     * Установка уровня логов
+     * @param string $level
+     */
+    public function setLogLevel ($level) {
+        $level = mb_strtolower($level);
+        if (in_array($level, LogLevel::$logLevels)) {
+            $this->loglevel = $level;
+        }
+    }
+
+    /**
+     * Установка имени файла для записи логов
+     * @param string $file
+     */
+    public function setFileName ($file) {
+        if ($file) $this->fileName = $file;
     }
 
     /**
@@ -120,22 +238,37 @@ class FLog {
     public function saveLog() {
         if (count($this->LOG)) {
             foreach ($this->LOG as $file => $logs) {
-                $this->checkFiles($file);
-                $path_index = $this->root_dir;
-                if ($this->path) $path_index = $path_index.SEPARATOR.$this->path;
-                if ($this->log_dir) $path_index = $path_index.SEPARATOR.$this->log_dir;
-                $path = $path_index.SEPARATOR.$file; // Путь к файлу логов
-                // Создаём, или открываем для записи файл логов
-                if (!($f = fopen($path, "a+"))) {
-                    echo "ERROR open log file: ".$path;
-                    exit;
-                }
-                // Записываем лог в файл
-                foreach ($logs as $text) fwrite($f, $text);
-                fclose($f);
+                if (is_array($logs)) foreach ($logs as $log) $this->save2File($file, $log);
+                else $this->save2File($file, $logs);
             }
             $this->LOG = array();
         }
+    }
+
+    /**
+     * Сохраняем в файл
+     * @param string $file - имя файла в который сохраняем
+     * @param string $log - строка, которую сохраняем
+     */
+    private function save2File ($file, $log) {
+        $this->checkFiles($file);
+        $path_index = $this->root_dir;
+        if ($this->path) $path_index = $path_index.SEPARATOR.$this->path;
+        if ($this->log_dir) $path_index = $path_index.SEPARATOR.$this->log_dir;
+        $path = $path_index.SEPARATOR.$file; // Путь к файлу логов
+        try {
+            // Создаём, или открываем для записи файл логов
+            if (!($f = fopen($path, "a+"))) {
+                throw new Exception("Couldn't open log file: ".$path);
+            }
+            // Записываем лог в файл
+            fwrite($f, $log);
+            fclose($f);
+        }
+        catch (Exception $e) {
+            echo 'Error: ',  $e->getMessage(), "\n";
+        }
+
     }
 
     /**
@@ -150,16 +283,16 @@ class FLog {
         $ip = Base::getIP();
         $agent = (isset($_SERVER['HTTP_USER_AGENT']))?$_SERVER['HTTP_USER_AGENT']:'USER AGENT NOT DEFINED';
         $uri = (isset($_SERVER['REQUEST_URI']))?$_SERVER['REQUEST_URI']:'REQUEST URI NOT DEFINED';
-        $text = $ip['ip']." - ".date("[d/M/Y H:i:s $i]")." - ".$uri." - \"".$agent.'"';
-        return $text;
+        return $ip['ip']." - ".date("[d/M/Y H:i:s $i]")." ".mb_strtoupper($this->loglevel)." - ".$uri." - \"".$agent.'"';
     }
 
     /**
      * Запись массива в лог по имени сохраняемого файла
      * @param array $array - массив логов
-     * @return mixed
+     * @param string $level - уровень логов
+     * @return boolean
      */
-    public function setArray2Log ($array) {
+    public function setArray2Log ($array, $level = 'debug') {
         if (!is_array($array)) {
             $this->set2Log($array);
             return true;
@@ -168,7 +301,8 @@ class FLog {
             $file = $array['file'];
             unset($array['file']);
         }
-        else $file = $this->file;
+        else $file = $this->fileName;
+        $this->setLogLevel($level);
         if (isset($array['log'])) $logs = $array['log'];
         elseif (isset($array['logs'])) $logs = $array['logs'];
         else $logs = $array;
@@ -185,13 +319,15 @@ class FLog {
      * @param string $file - файл в который записываем
      */
     public function set2Log ($text, $file = '') {
-        if (!$file) $file = $this->file;
+        if (!$file) $file = $this->fileName;
         if (!isset($this->LOG[$file]) || !is_array($this->LOG[$file])) $this->LOG[$file] = array();
         $i = count($this->LOG[$file]);
         if (!is_string($text)) $text = print_r($text, true);
-        $this->LOG[$file][$i] = $this->init();
-        $this->LOG[$file][$i] .= " - ".$text;
-        $this->LOG[$file][$i] .= $this->rn;
+        $log = $this->init();
+        $log .= " - ".$text;
+        $log .= $this->rn;
+        if ($this->saveNow) $this->save2File($file, $log);
+        else $this->LOG[$file][$i] = $log;
     }
 
     /**
@@ -204,18 +340,28 @@ class FLog {
         $path_index = $this->root_dir;
         if ($this->path) $path_index = $path_index.SEPARATOR.$this->path;
         if (!is_dir($path_index)) {
-            if (mkdir($path_index, 0755)) chmod($path_index, 0755);
-            else {
-                echo "ERROR log dir:".$path_index;
-                exit;
+            try {
+                if (!mkdir($path_index, 0755)) {
+                    throw new Exception("Unable to create folder: ".$path_index);
+                }
+                chmod($path_index, 0755);
+            }
+            catch (Exception $e) {
+                echo 'Error: ',  $e->getMessage(), "\n";
+                return false;
             }
         }
         if ($this->log_dir) $path_index = $path_index.SEPARATOR.$this->log_dir;
         if (!is_dir($path_index)) {
-            if (mkdir($path_index, 0755)) chmod($path_index, 0755);
-            else {
-                echo "ERROR log dir:".$path_index;
-                exit;
+            try {
+                if (!mkdir($path_index, 0755)) {
+                    throw new Exception("Unable to create folder: ".$path_index);
+                }
+                chmod($path_index, 0755);
+            }
+            catch (Exception $e) {
+                echo 'Error: ',  $e->getMessage(), "\n";
+                return false;
             }
         }
         // Если в директории есть старые файлы логов - удаляем их.
@@ -238,12 +384,12 @@ class FLog {
      * @param string $file - имя файла, который проверяем
      */
     private function checkFiles ($file = '') {
-        if (!$file) $file = $this->file;
+        if (!$file) $file = $this->fileName;
         $path_index = $this->root_dir;
         if ($this->path) $path_index = $path_index.SEPARATOR.$this->path;
         if ($this->log_dir) $path_index = $path_index.SEPARATOR.$this->log_dir;
-        $path = $path_index.SEPARATOR.$file; // Путь к файлу логов
-        // Проверяем размер файла логов, если более указанного в настройках - переименовываем
+        $path = $path_index.SEPARATOR.$file; // Путь к файлу логов.
+        // Проверяем размер файла логов, если более указанного в настройках, переименовываем.
         if (file_exists($path)) {
             $now_size = filesize($path);
             if ($now_size > (1048576*$this->max_size)) {
