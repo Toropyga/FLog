@@ -104,21 +104,21 @@ $LOG->alert($log, $context);
 ```php
 $LOG->emergency($log, $context);
 ```
-или общий вариант с указанием уровня логов
+Также возможен общий вариант с указанием уровня логов
 ```php
 $level = "debug";
 $log = "log text";
 $file = "file_log_name";
-$LOG->setFileName($file);
-$LOG->log($level, $log);
+$LOG->setFileName($file); // задаём, если необходимо, имя файла логов
+$LOG->log($level, $log); // сохраняем лог
 ```
-или (устаревший вариант)
+Можно использовать устаревший вариант
 ```php
 $level = "debug";
 $log = "log text";
 $file = "file_log_name";
-$LOG->setLevel($level); // устанавливаем уровень логов
-$LOG->set2Log($log, $file);
+$LOG->setLevel($level); // устанавливаем, если необходимо, уровень логов
+$LOG->set2Log($log, $file); // сохраняем лог
 ```
 ---
 ### Сохранение массива логов
@@ -129,7 +129,7 @@ $logs['log'][] = "log text line 2";
 $logs['log'][] = "log text line 3";
 $logs['file'] = "file_log_name";
 $level = "debug";
-$LOG->setLevel($level);
-$LOG->setArray2Log($logs);
+$LOG->setLevel($level); // устанавливаем, если необходимо, уровень логов
+$LOG->setArray2Log($logs); // сохраняем лог
 ```
 ---
