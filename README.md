@@ -67,6 +67,9 @@ $LOG = new FYN\FLog();
 $log = "log text";
 $context = array("other" => "Other information"); // необязательный параметр
 $file = "file_log_name";
+```
+Задаём имя файла логов
+```php
 $LOG->setFileName($file);
 ```
 Сохраняем лог уровня debug
