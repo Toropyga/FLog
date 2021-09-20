@@ -84,59 +84,61 @@ $LOG->setFileName ($file)
 ```
 ---
 
-
 ### Сохранение строки логов
 Предварительные данные лога
+В тексте лога возможна подстановка. Подстановочная переменная выделяется фигурными скобками.
+Подстановка осуществляется значениями из массива context по ключу, соответствующему имени подстановочной переменной без фигурных скобок. ([см. документацию п.1.2](https://www.php-fig.org/psr/psr-3/))
 ```php
-$log = "log text";
-$context = array("other" => "Other information"); // необязательный параметр
+$message = "log text for {user}";
+$context = array("user" => "you", "other" => "Other information"); // необязательный параметр
 ```
 
 Лог уровня **debug**
 ```php
-$LOG->debug($log, $context);
+$LOG->debug($message, $context);
 ```
 Лог уровня **info**
 ```php
-$LOG->info($log, $context);
+$LOG->info($message, $context);
 ```
 Лог уровня **notice**
 ```php
-$LOG->notice($log, $context);
+$LOG->notice($message, $context);
 ```
 Лог уровня **warning**
 ```php
-$LOG->warning($log, $context);
+$LOG->warning($message, $context);
 ```
 Лог уровня **error**
 ```php
-$LOG->error($log, $context);
+$LOG->error($message, $context);
 ```
 Лог уровня **critical**
 ```php
-$LOG->critical($log, $context);
+$LOG->critical($message, $context);
 ```
 Лог уровня **alert**
 ```php
-$LOG->alert($log, $context);
+$LOG->alert($message, $context);
 ```
 Лог уровня **emergency**
 ```php
-$LOG->emergency($log, $context);
+$LOG->emergency($message, $context);
 ```
 ---
 Также возможен общий вариант с указанием уровня логов
 ```php
 $level = "debug";
-$log = "log text";
-$LOG->log($level, $log); // сохраняем лог
+$message = "log text for {user}";
+$context = array("user" => "you"); // необязательный параметр
+$LOG->log($level, $message, $context); // сохраняем лог
 ```
 ---
 Можно использовать устаревший вариант
 ```php
-$log = "log text";
+$message = "log text";
 $file = "file_log_name";
-$LOG->set2Log($log, $file); // сохраняем лог
+$LOG->set2Log($message, $file); // сохраняем лог
 ```
 ---
 ### Сохранение массива логов
