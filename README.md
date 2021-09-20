@@ -117,7 +117,7 @@ $LOG->log($level, $log);
 $level = "debug";
 $log = "log text";
 $file = "file_log_name";
-$LOG->setLevel($level);
+$LOG->setLevel($level); // устанавливаем уровень логов
 $LOG->set2Log($log, $file);
 ```
 ---
