@@ -2,7 +2,7 @@
 /**
  * Класс логирования
  * @author Yuri Frantsevich (FYN)
- * @version 2.2.1
+ * @version 2.2.2
  * @copyright 2018-2021
  */
 
