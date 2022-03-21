@@ -2,13 +2,14 @@
 /**
  * Класс логирования
  * @author Yuri Frantsevich (FYN)
- * @version 2.2.2
- * @copyright 2018-2021
+ * @version 3.0.0
+ * @copyright 2018-2022
  */
 
 namespace FYN;
 
 use FYN\Base;
+use FYN\DB;
 use Exception;
 
 class FLog implements LoggerInterface {
@@ -29,7 +30,7 @@ class FLog implements LoggerInterface {
      * Имя файла логов
      * @var string
      */
-    private $fileName = 'site.log';
+    private $fileName = '';
 
     /**
      * Директория логов
@@ -63,6 +64,19 @@ class FLog implements LoggerInterface {
     private $loglevel = 'error';
 
     /**
+     * Тип сохранения
+     *  0 - сохранять в файл
+     *  1 - сохранять в STDOUT
+     *  2 - сохранять в БД
+     *  3 - сохранять в файл и STDOUT
+     *  4 - сохранять в файл и БД
+     *  5 - сохранять в STDOUT и БД
+     *  6 - сохранять в файл, STDOUT и БД
+     * @var integer
+     */
+    private $saveType = 0;
+
+    /**
      * Сохранять в лог сразу или по окончании работы
      * @var bool
      */
@@ -94,6 +108,18 @@ class FLog implements LoggerInterface {
      * @var string
      */
     private $system_info = 'full'; // simple, advanced, full
+
+    /**
+     * Объект для работы с базой данных
+     * @var object
+     */
+    private $DB;
+
+    /**
+     * Параметр вызова функции инициализации базы данных
+     * @var bool
+     */
+    private $db_init = false;
 
     /**
      * Конструктор класса логирования
@@ -131,7 +157,6 @@ class FLog implements LoggerInterface {
         if (defined('LOG_LEVEL')) $this->setLogLevel(LOG_LEVEL);
         if (defined('LOG_SAVE_NOW')) $this->saveNow = (bool)LOG_SAVE_NOW;
         if (defined('LOG_SYSTEM_INFO')) $this->setSystemInfo(LOG_SYSTEM_INFO);
-        if (!$this->fileName) $this->fileName = 'site.log';
         if (!$this->max_size < 1) $this->max_size = 1;
         if (!$this->days < 1) $this->days = 1;
         if (!$this->checkDir()) exit;
@@ -149,7 +174,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function emergency ($message, array $context = array()) {
+    public function emergency (string $message, array $context = array()) {
         $this->log(LogLevel::EMERGENCY, $message, $context);
     }
 
@@ -158,7 +183,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function alert ($message, array $context = array()) {
+    public function alert (string $message, array $context = array()) {
         $this->log(LogLevel::ALERT, $message, $context);
     }
 
@@ -167,7 +192,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function critical ($message, array $context = array()) {
+    public function critical (string $message, array $context = array()) {
         $this->log(LogLevel::CRITICAL, $message, $context);
     }
 
@@ -176,7 +201,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function error ($message, array $context = array()) {
+    public function error (string $message, array $context = array()) {
         $this->log(LogLevel::ERROR, $message, $context);
     }
 
@@ -185,7 +210,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function warning ($message, array $context = array()) {
+    public function warning (string $message, array $context = array()) {
         $this->log(LogLevel::WARNING, $message, $context);
     }
 
@@ -194,7 +219,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function notice ($message, array $context = array()) {
+    public function notice (string $message, array $context = array()) {
         $this->log(LogLevel::NOTICE, $message, $context);
     }
 
@@ -203,7 +228,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function info ($message, array $context = array()) {
+    public function info (string $message, array $context = array()) {
         $this->log(LogLevel::INFO, $message, $context);
     }
 
@@ -212,7 +237,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function debug ($message, array $context = array()) {
+    public function debug (string $message, array $context = array()) {
         $this->log(LogLevel::DEBUG, $message, $context);
     }
 
@@ -222,7 +247,7 @@ class FLog implements LoggerInterface {
      * @param string $message - основной текст лога
      * @param array $context - дополнительные данные
      */
-    public function log ($level, $message, array $context = array()) {
+    public function log (string $level, string $message, array $context = array()) {
         $this->setLogLevel($level);
         list($message, $context) = $this->interpolate($message, $context);
         if (sizeof($context) > 0) {
@@ -241,7 +266,8 @@ class FLog implements LoggerInterface {
      * @param array $context - дополнительные данные
      * @return array
      */
-    private function interpolate ($message, array $context = array()) {
+    private function interpolate (string $message, array $context = array()): array
+    {
         // build a replacement array with braces around the context keys
         $replace = array();
         foreach ($context as $key => $val) {
@@ -261,9 +287,10 @@ class FLog implements LoggerInterface {
      */
     private function saveLog () {
         if (count($this->LOG)) {
+            $this->saveNow = true;
             foreach ($this->LOG as $file => $logs) {
-                if (is_array($logs)) foreach ($logs as $log) $this->save2File($file, $log);
-                else $this->save2File($file, $logs);
+                if (is_array($logs)) foreach ($logs as $log) $this->set2Log($log, $file, true);
+                else $this->set2Log($logs, $file, true);
             }
             $this->LOG = array();
         }
@@ -274,11 +301,12 @@ class FLog implements LoggerInterface {
      * @param string $file - имя файла в который сохраняем
      * @param string $log - строка, которую сохраняем
      */
-    private function save2File ($file, $log) {
+    private function save2File (string $file, string $log) {
         $this->checkFiles($file);
         $path_index = $this->root_dir;
         if ($this->path) $path_index = $path_index.SEPARATOR.$this->path;
         if ($this->log_dir) $path_index = $path_index.SEPARATOR.$this->log_dir;
+        $file = $file.".log";
         $path = $path_index.SEPARATOR.$file; // Путь к файлу логов
         try {
             // Создаём, или открываем для записи файл логов
@@ -296,10 +324,57 @@ class FLog implements LoggerInterface {
     }
 
     /**
+     * Сохраняем в STDOUT
+     * @param string $log - строка, которую сохраняем
+     */
+    private function save2STDOUT (string $log) {
+        try {
+            // Записываем лог в STDOUT
+            if (!(fwrite(STDOUT, $log))) {
+                throw new Exception("Couldn't write to STDOUT!");
+            }
+        }
+        catch (Exception $e) {
+            echo 'Error: ',  $e->getMessage(), "\n";
+        }
+
+    }
+
+    /**
+     * Сохраняем в БД
+     * @param string $log - строка, которую сохраняем
+     */
+    private function save2DB (string $log, string $file = '') {
+        $log_array = preg_split("/".$this->separator."/", $log);
+        preg_match("/\[(\d+)\/(\w+)\/(\d+)\s((\d+):(\d+):(\d+))\s\+\d+\]\s(\w+)/", $log_array[1], $match);
+        $level = mb_strtolower($match[8]);
+        $dt = $match[2]."-".$match[1]."-".$match[3]." ".$match[4];
+        $tm = strtotime($dt);
+        $dt = date("Y-m-d H:i:s", $tm);
+        $ip = $log_array[0];
+        $path = $log_array[2];
+        $browser = $log_array[3];
+        unset($log_array[0],$log_array[1],$log_array[2],$log_array[3]);
+        $text = trim(implode($this->separator, $log_array));
+        $data = array(
+            'log_name' => $file,
+            'log_date' => $dt,
+            'log_ip' => $ip,
+            'log_level' => $level,
+            'log_path' => $path,
+            'log_browser' => $browser,
+            'log_text' => $text
+        );
+        $sql = $this->DB->getInsertSQL('logs_fyn', $data);
+        $this->DB->query($sql);
+    }
+
+    /**
      * Генерация информации о дате и времени записи лога для начала строки
      * @return string
      */
-    private function getInit () {
+    private function getInit (): string
+    {
         $zone = date('Z');
         $zone = $zone/36;
         $k = ($zone>0)?'+':'-';
@@ -318,10 +393,50 @@ class FLog implements LoggerInterface {
     }
 
     /**
+     * Установка типа сохранения логов
+     * Тип может принимать на вход числа от 0 до 6 или строку (file - в файл, stdout - система, db - база данных)
+     * Числовой тип сохранения:
+     *  0 - сохранять в файл
+     *  1 - сохранять в STDOUT
+     *  2 - сохранять в БД
+     *  3 - сохранять в файл и STDOUT
+     *  4 - сохранять в файл и БД
+     *  5 - сохранять в STDOUT и БД
+     *  6 - сохранять в файл, STDOUT и БД
+     * Если на вход подаётся не число, а строка, то в ней может быть казано несколько типов, разделённых запятой в любом порядке ('file, db')
+     *
+     * @param mixed $type - запрашиваемый тип сохранения логов
+     */
+    public function setSaveType ($type = 0) {
+        $types = array(
+            'file'              => 0,
+            'stdout'            => 1,
+            'db'                => 2,
+            'file,stdout'       => 3,
+            'stdout,file'       => 3,
+            'file,db'           => 4,
+            'db,file'           => 4,
+            'stdout,db'         => 5,
+            'db,stdout'         => 5,
+            'file,stdout,db'    => 6,
+            'stdout,db,file'    => 6,
+            'stdout,file,db'    => 6,
+            'file,db,stdout'    => 6,
+            'db,stdout,file'    => 6,
+            'db,file,stdout'    => 6,
+        );
+        $type = preg_replace("/\s/", "", $type);
+        if (in_array($type, array_keys($types))) $type = $types[$type];
+        if (preg_match("/^\d+$/", $type) && in_array((int)$type, array(0,1,2,3,4,5,6))) {
+            $this->saveType = $type;
+        }
+    }
+
+    /**
      * Параметр объёма служебной информации в логе
      * @param string $system_info - объём служебной информации в логе ('full', 'advanced', 'simple')
      */
-    public function setSystemInfo ($system_info) {
+    public function setSystemInfo (string $system_info) {
         if (in_array($system_info, array('full', 'advanced', 'simple'))) {
             $this->system_info = $system_info;
         }
@@ -331,7 +446,7 @@ class FLog implements LoggerInterface {
      * Установка уровня логов
      * @param string $level
      */
-    public function setLogLevel ($level) {
+    public function setLogLevel (string $level) {
         $level = mb_strtolower($level);
         if (in_array($level, LogLevel::$logLevels)) {
             $this->loglevel = $level;
@@ -342,8 +457,43 @@ class FLog implements LoggerInterface {
      * Установка имени файла для записи логов
      * @param string $file
      */
-    public function setFileName ($file) {
-        if ($file) $this->fileName = $file;
+    public function setFileName (string $file) {
+        if ($file) {
+            if (preg_match("/\.log$/ui", $file)) $file = preg_replace("/\.log$/", "", $file);
+            $this->fileName = $file;
+        }
+    }
+
+    /**
+     * Установка имени лога для записи логов
+     * !! Дублирование с функцией setFileName для поддержки совместимости
+     * @param string $file
+     */
+    public function setName (string $file) {
+        if ($file) {
+            if (preg_match("/\.log$/ui", $file)) $file = preg_replace("/\.log$/", "", $file);
+            $this->fileName = $file;
+        }
+    }
+
+    /**
+     * Передача параметров подключения к базе данных и инициализация таблицы
+     * @param FYN\DB\MySQL $DB
+     * @param string $tableName - имя таблицы для сохранения логов, если не указано, то используется имя по умолчанию
+     */
+    public function setDB (DB\MySQL $DB, string $tableName = '') {
+        if ($DB->status) {
+            $this->DB = $DB;
+            if (!$tableName) $tableName = LogLevel::$tableName;
+            if (!in_array($tableName, $this->DB->getTableList())) {
+                $sql = strtr(LogLevel::$LogTable, array("{tableName}" => $tableName));
+                if ($this->DB->query($sql)) $this->db_init = true;
+            }
+            else {
+                $this->checkDBData();
+                $this->db_init = true;
+            }
+        }
     }
 
     /**
@@ -352,7 +502,8 @@ class FLog implements LoggerInterface {
      * @param string $level - уровень логов
      * @return boolean
      */
-    public function setArray2Log ($array, $level = 'debug') {
+    public function setArray2Log (array $array, $level = 'debug'): bool
+    {
         if (!is_array($array)) {
             $this->set2Log($array);
             return true;
@@ -375,19 +526,88 @@ class FLog implements LoggerInterface {
 
     /**
      * Запись логов в массив по имени сохраняемого файла
-     * @param $text - текст лога
+     * @param mixed $text - текст лога
      * @param string $file - файл в который записываем
+     * @param bool $log_ready - лог не нуждается в дополнительной обработке
      */
-    public function set2Log ($text, $file = '') {
+    public function set2Log ($text, $file = '', $log_ready = false) {
         if (!$file) $file = $this->fileName;
+        if (!$file) $file = 'fynlog';
         if (!isset($this->LOG[$file]) || !is_array($this->LOG[$file])) $this->LOG[$file] = array();
         $i = count($this->LOG[$file]);
         if (!is_string($text)) $text = print_r($text, true);
-        $log = $this->getInit();
-        $log .= " - ".$text;
-        $log .= $this->rn;
-        if ($this->saveNow) $this->save2File($file, $log);
+        if ($log_ready) $log = $text;
+        else {
+            $log = $this->getInit();
+            $log .= " - " . $text;
+            $log .= $this->rn;
+        }
+        $this->checkDB();
+        if ($this->saveNow) {
+            switch ($this->saveType) {
+                case 1:
+                    $this->save2STDOUT($log);
+                    break;
+                case 2:
+                    $this->save2DB($log, $file);
+                    break;
+                case 3:
+                    $this->save2File($file, $log);
+                    $this->save2STDOUT($log);
+                    break;
+                case 4:
+                    $this->save2File($file, $log);
+                    $this->save2DB($log, $file);
+                    break;
+                case 5:
+                    $this->save2STDOUT($log);
+                    $this->save2DB($log, $file);
+                    break;
+                case 6:
+
+                    $this->save2File($file, $log);
+                    $this->save2STDOUT($log);
+                    $this->save2DB($log, $file);
+                    break;
+                default:
+                    $this->save2File($file, $log);
+            }
+        }
         else $this->LOG[$file][$i] = $log;
+    }
+
+    /**
+     * Проверка подключения к БД и типа записи
+     */
+    private function checkDB () {
+        if (!$this->db_init && in_array($this->saveType, array(2, 4, 5, 6))) {
+            switch ($this->saveType) {
+                case 2:
+                    $this->saveType = 0;
+                    break;
+                case 4:
+                    $this->saveType = 0;
+                    break;
+                case 5:
+                    $this->saveType = 1;
+                    break;
+                case 6:
+                    $this->saveType = 3;
+                    break;
+            }
+        }
+    }
+
+    /**
+     * Очистка базы данных от старых записей
+     */
+    private function checkDBData () {
+        if ($this->db_init) {
+            $thime = time()-60*60*24*$this->days;
+            $date = date("Y-m-d H:is", $time);
+            $sql = "DELETE FROM `".LogLevel::$tableName."` WHERE log_date < '$date'";
+            $this->DB->query($sql);
+        }
     }
 
     /**
@@ -396,7 +616,8 @@ class FLog implements LoggerInterface {
      * очистка директории от старых файлов
      * @return bool
      */
-    private function checkDir () {
+    private function checkDir (): bool
+    {
         $path_index = $this->root_dir;
         if ($this->path) $path_index = $path_index.SEPARATOR.$this->path;
         if (!is_dir($path_index)) {
@@ -445,6 +666,7 @@ class FLog implements LoggerInterface {
      */
     private function checkFiles ($file = '') {
         if (!$file) $file = $this->fileName;
+        $file = $file.".log";
         $path_index = $this->root_dir;
         if ($this->path) $path_index = $path_index.SEPARATOR.$this->path;
         if ($this->log_dir) $path_index = $path_index.SEPARATOR.$this->log_dir;

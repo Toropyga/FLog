@@ -15,7 +15,7 @@ class LogLevel {
     const NOTICE    = 'notice';
     const INFO      = 'info';
     const DEBUG     = 'debug';
-    static public $logLevels = array(
+    static public array $logLevels = array(
         'emergency',
         'alert',
         'critical',
@@ -25,4 +25,18 @@ class LogLevel {
         'info',
         'debug'
     );
+    static public string $tableName = "logs_fyn";
+    static public string $LogTable = "
+        CREATE TABLE `{tableName}` (
+            `log_id` INT NOT NULL AUTO_INCREMENT,
+            `log_name` VARCHAR(45) NULL,
+            `log_date` DATETIME NULL,
+            `log_ip` VARCHAR(15) NULL,
+            `log_level` VARCHAR(45) NULL,
+            `log_path` VARCHAR(250) NULL,
+            `log_browser` VARCHAR(100) NULL,
+            `log_text` LONGTEXT NULL,
+            PRIMARY KEY (`log_id`)
+        );
+    ";
 }
