@@ -2,7 +2,7 @@
 /**
  * Класс логирования
  * @author Yuri Frantsevich (FYN)
- * @version 3.0.0
+ * @version 3.0.2
  * @copyright 2018-2022
  */
 
@@ -114,6 +114,12 @@ class FLog implements LoggerInterface {
      * @var object
      */
     private $DB;
+
+    /**
+     * Имя таблицы в базе данных для хранения логов
+     * @var string
+     */
+    private $table_name = '';
 
     /**
      * Параметр вызова функции инициализации базы данных
@@ -330,7 +336,12 @@ class FLog implements LoggerInterface {
     private function save2STDOUT (string $log) {
         try {
             // Записываем лог в STDOUT
-            if (!(fwrite(STDOUT, $log))) {
+            $log_array = preg_split("/".$this->separator."/", $log);
+            preg_match("/\[(\d+)\/(\w+)\/(\d+)\s((\d+):(\d+):(\d+))\s\+\d+\]\s(\w+)/", $log_array[1], $match);
+            $level = mb_strtolower($match[8]);
+            if ($level == 'error' || $level == 'critical') $STD = (defined(STDERR))?STDERR:fopen("php://stderr", "w");
+            else $STD = (defined(STDOUT))?STDOUT:fopen("php://stderr", "w");
+            if (!(fwrite($STD, $log))) {
                 throw new Exception("Couldn't write to STDOUT!");
             }
         }
@@ -484,7 +495,7 @@ class FLog implements LoggerInterface {
     public function setDB (DB\MySQL $DB, string $tableName = '') {
         if ($DB->status) {
             $this->DB = $DB;
-            if (!$tableName) $tableName = LogLevel::$tableName;
+            if (!$tableName) $tableName = $this->table_name??LogLevel::$tableName;
             if (!in_array($tableName, $this->DB->getTableList())) {
                 $sql = strtr(LogLevel::$LogTable, array("{tableName}" => $tableName));
                 if ($this->DB->query($sql)) $this->db_init = true;
@@ -494,6 +505,19 @@ class FLog implements LoggerInterface {
                 $this->db_init = true;
             }
         }
+    }
+
+    /**
+     * Задание имени таблицы для хранения логов
+     * @param $name - имя таблицы
+     * @return bool
+     */
+    public function setTableName ($name) {
+        if (preg_match("/[A-z]+([A-z_]+)?/", $name)) {
+            $this->table_name = $name;
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -582,10 +606,8 @@ class FLog implements LoggerInterface {
     private function checkDB () {
         if (!$this->db_init && in_array($this->saveType, array(2, 4, 5, 6))) {
             switch ($this->saveType) {
-                case 2:
-                    $this->saveType = 0;
-                    break;
                 case 4:
+                case 2:
                     $this->saveType = 0;
                     break;
                 case 5:
@@ -603,7 +625,7 @@ class FLog implements LoggerInterface {
      */
     private function checkDBData () {
         if ($this->db_init) {
-            $thime = time()-60*60*24*$this->days;
+            $time = time()-60*60*24*$this->days;
             $date = date("Y-m-d H:is", $time);
             $sql = "DELETE FROM `".LogLevel::$tableName."` WHERE log_date < '$date'";
             $this->DB->query($sql);
