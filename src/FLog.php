@@ -495,7 +495,7 @@ class FLog implements LoggerInterface {
     public function setDB (DB\MySQL $DB, string $tableName = '') {
         if ($DB->status) {
             $this->DB = $DB;
-            if (!$tableName) $tableName = $this->table_name??LogLevel::$tableName;
+            if (!$tableName) $tableName = ($this->table_name)?$this->table_name:LogLevel::$tableName;
             if (!in_array($tableName, $this->DB->getTableList())) {
                 $sql = strtr(LogLevel::$LogTable, array("{tableName}" => $tableName));
                 if ($this->DB->query($sql)) $this->db_init = true;
