@@ -2,8 +2,8 @@
 Класс логирования
 
 ![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)
-![Version](https://img.shields.io/badge/version-v3.0.2-blue.svg)
-![PHP](https://img.shields.io/badge/php-v7.1_--_v8-blueviolet.svg)
+![Version](https://img.shields.io/badge/version-v3.0.3-blue.svg)
+![PHP](https://img.shields.io/badge/php-v7.4_--_v8-blueviolet.svg)
 
 ## Содержание
 
@@ -102,11 +102,15 @@ $LOG->setName ($file);
 ```php
 $LOG->setSaveType(4);
 ```
+или
+```php
+$LOG->setSaveType('file,db');
+```
 ---
 Подключение базы данных для записи логов в базу данных
 ```php
 use FYN\DB;
-$DB = DB\MySQL();
+$DB = new DB\MySQL();
 $LOG->setDB($DB);
 ```
 ---

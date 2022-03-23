@@ -34,7 +34,7 @@ class LogLevel {
             `log_ip` VARCHAR(15) NULL,
             `log_level` VARCHAR(45) NULL,
             `log_path` VARCHAR(250) NULL,
-            `log_browser` VARCHAR(100) NULL,
+            `log_browser` TINYTEXT NULL,
             `log_text` LONGTEXT NULL,
             PRIMARY KEY (`log_id`)
         );

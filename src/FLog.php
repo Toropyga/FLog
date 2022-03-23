@@ -2,7 +2,7 @@
 /**
  * Класс логирования
  * @author Yuri Frantsevich (FYN)
- * @version 3.0.2
+ * @version 3.0.3
  * @copyright 2018-2022
  */
 
@@ -339,8 +339,8 @@ class FLog implements LoggerInterface {
             $log_array = preg_split("/".$this->separator."/", $log);
             preg_match("/\[(\d+)\/(\w+)\/(\d+)\s((\d+):(\d+):(\d+))\s\+\d+\]\s(\w+)/", $log_array[1], $match);
             $level = mb_strtolower($match[8]);
-            if ($level == 'error' || $level == 'critical') $STD = (defined(STDERR))?STDERR:fopen("php://stderr", "w");
-            else $STD = (defined(STDOUT))?STDOUT:fopen("php://stderr", "w");
+            if ($level == 'error' || $level == 'critical') $STD = fopen("php://stderr", "w");
+            else $STD = fopen("php://stderr", "w");
             if (!(fwrite($STD, $log))) {
                 throw new Exception("Couldn't write to STDOUT!");
             }
