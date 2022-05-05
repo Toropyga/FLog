@@ -2,7 +2,7 @@
 /**
  * Класс логирования
  * @author Yuri Frantsevich (FYN)
- * @version 3.0.3
+ * @version 3.0.4
  * @copyright 2018-2022
  */
 
@@ -363,7 +363,7 @@ class FLog implements LoggerInterface {
         $tm = strtotime($dt);
         $dt = date("Y-m-d H:i:s", $tm);
         $ip = $log_array[0];
-        $path = $log_array[2];
+        $path = substr($log_array[2], 0, 250);
         $browser = $log_array[3];
         unset($log_array[0],$log_array[1],$log_array[2],$log_array[3]);
         $text = trim(implode($this->separator, $log_array));
