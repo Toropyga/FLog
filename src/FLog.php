@@ -501,8 +501,8 @@ class FLog implements LoggerInterface {
                 if ($this->DB->query($sql)) $this->db_init = true;
             }
             else {
-                $this->checkDBData();
                 $this->db_init = true;
+                $this->checkDBData();
             }
         }
     }
