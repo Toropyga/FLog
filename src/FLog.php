@@ -626,7 +626,7 @@ class FLog implements LoggerInterface {
     private function checkDBData () {
         if ($this->db_init) {
             $time = time()-60*60*24*$this->days;
-            $date = date("Y-m-d H:is", $time);
+            $date = date("Y-m-d H:i:s", $time);
             $sql = "DELETE FROM `".LogLevel::$tableName."` WHERE log_date < '$date'";
             $this->DB->query($sql);
         }
