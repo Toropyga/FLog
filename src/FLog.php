@@ -2,8 +2,8 @@
 /**
  * Класс логирования
  * @author Yuri Frantsevich (FYN)
- * @version 3.0.4
- * @copyright 2018-2022
+ * @version 3.0.7
+ * @copyright 2018-2023
  */
 
 namespace FYN;
@@ -157,7 +157,7 @@ class FLog implements LoggerInterface {
         }
         if (defined('LOG_PATH')) $this->path = LOG_PATH;
         if (defined('LOG_DIR')) $this->log_dir = LOG_DIR;
-        if (defined('LOG_NAME')) $this->fileName = LOG_NAME;
+        if (defined('LOG_NAME')) $this->setFileName(LOG_NAME);
         if (defined('LOG_SIZE')) $this->max_size = LOG_SIZE;
         if (defined('LOG_TIME')) $this->days = LOG_TIME;
         if (defined('LOG_LEVEL')) $this->setLogLevel(LOG_LEVEL);
