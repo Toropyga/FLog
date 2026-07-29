@@ -1,6 +1,6 @@
 <?php
 
-namespace FYN;
+namespace Toropyga;
 
 
 /**

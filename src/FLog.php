@@ -1,15 +1,15 @@
 <?php
 /**
  * Класс логирования
- * @author Yuri Frantsevich (FYN)
- * @version 3.0.7
- * @copyright 2018-2023
+ * @author Yuri Frantsevich
+ * @version 4.0.0
+ * @copyright 2018-2026
  */
 
-namespace FYN;
+namespace Toropyga;
 
-use FYN\Base;
-use FYN\DB;
+use Toropyga\Base;
+use Toropyga\DB;
 use Exception;
 
 class FLog implements LoggerInterface {
@@ -489,7 +489,7 @@ class FLog implements LoggerInterface {
 
     /**
      * Передача параметров подключения к базе данных и инициализация таблицы
-     * @param FYN\DB\MySQL $DB
+     * @param Toropyga\DB\MySQL $DB
      * @param string $tableName - имя таблицы для сохранения логов, если не указано, то используется имя по умолчанию
      */
     public function setDB (DB\MySQL $DB, string $tableName = '') {
