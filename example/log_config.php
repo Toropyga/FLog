@@ -44,6 +44,12 @@ $config['log_size'] = 2;
 $config['log_time'] = 365;
 
 /**
+ * Вызывать ли очистку директории от старых файлов
+ * @var boolean
+ */
+$config['log_clear'] = true;
+
+/**
  * Уровень логов
  * @var string
  */
@@ -78,3 +84,4 @@ if (!defined('LOG_TIME')) define('LOG_TIME', $config['log_time']);
 if (!defined('LOG_LEVEL')) define('LOG_LEVEL', $config['log_level']);
 if (!defined('LOG_SAVE_NOW')) define('LOG_SAVE_NOW', $config['log_save_now']);
 if (!defined('LOG_SYSTEM_INFO')) define('LOG_SYSTEM_INFO', $config['log_system_info']);
+if (!defined('LOG_CLEAR')) define('LOG_CLEAR', $config['log_clear']);

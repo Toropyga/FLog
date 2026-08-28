@@ -1,70 +1,93 @@
 # FLog
-Класс логирования
+Logging class
 
 ![License](https://img.shields.io/badge/license-MIT-brightgreen.svg)
-![Version](https://img.shields.io/badge/version-v4.0.1-blue.svg)
+![Version](https://img.shields.io/badge/version-v4.1.0-blue.svg)
 ![PHP](https://img.shields.io/badge/php-v7.4_--_v8-blueviolet.svg)
 
-## Содержание
+## Contents
 
-- [Общее описание](#Общее-описание)
-- [Установка](#Установка)
-- [Настройка](#Настройка)
-- [Описание работы](#описание-работы)
-    - [Подключение файла класса](#Подключение-файла-класса)
-    - [Инициализация класса](#Инициализация-класса)
-    - [Настройка параметров](#Настройка-параметров)
-    - [Сохранение строки логов](#Сохранение-строки-логов)
-    - [Сохранение массива логов](#Сохранение-массива-логов)
-    
-## Общее описание
+- [Overview](#overview)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+    - [Including the class file](#including-the-class-file)
+    - [Initializing the class](#initializing-the-class)
+    - [Setting parameters](#setting-parameters)
+    - [Saving a log line](#saving-a-log-line)
+    - [Saving an array of logs](#saving-an-array-of-logs)
 
-Класс FLog предназначен для сохранения переданных данных в файл.
-Для работы необходимо наличие PHP версии 7.1 и выше.
+## Overview
 
-Есть возможность настройки размера конечного файла и времени хранения файлов.
-Файлы логов не будут превышать указанного размера и не будут хранится дольше указанного времени хранения.
+The FLog class is designed to save the passed data to a file.
+It requires PHP version 7.1 or higher.
 
-## Установка
+You can configure the maximum size of the resulting file and the retention period for log files.
+Log files will not exceed the specified size and will not be stored longer than the specified retention period.
 
-Рекомендуемый способ установки библиотеки FLog с использованием [Composer](http://getcomposer.org/):
+## Installation
+
+The recommended way to install the FLog library is via [Composer](http://getcomposer.org/):
 
 ```bash
 composer require toropyga/flog
 ```
 
-## Настройка
-Предварительная настройка параметров по умолчанию может осуществляться или непосредственно в самом классе, или с помощью именованных констант.
-Именованные константы при необходимости объявляются до вызова класса, например, в конфигурационном файле, и определяют параметры по умолчанию.
-* LOG_ROOT_PATH - путь к корневой директории сайта, по умолчанию - текущая директория;
-* LOG_PATH - имя директории в которой создаётся директория логов;
-* LOG_DIR - имя директории логов;
-* LOG_NAME - имя файла логов;
-* LOG_SIZE - максимальный размер файла логов в мегабайтах (Мб);
-* LOG_TIME - количество дней на протяжении которых сохраняются логи;
-* LOG_LEVEL - уровень лога по умолчанию (debug, info, notice, warning, error, critical, alert, emergency);
-* LOG_SAVE_NOW - сохранять строку лога сразу в файл или сохранить пакетом по окончании работы;
+## Configuration
+Default parameters can be pre-configured either directly in the class itself, via named constants, or by passing parameters when the class is initialized.
+Named constants, if needed, are declared before the class is called (for example, in a configuration file) and define the default parameters.
+* LOG_ROOT_PATH - path to the site's root directory; defaults to the current directory;
+* LOG_PATH - name of the directory in which the logs directory is created;
+* LOG_DIR - name of the logs directory;
+* LOG_NAME - name of the log file;
+* LOG_SIZE - maximum log file size in megabytes (MB);
+* LOG_TIME - number of days for which logs are kept;
+* LOG_LEVEL - default log level (debug, info, notice, warning, error, critical, alert, emergency);
+* LOG_SAVE_NOW - whether to save the log line to the file immediately or save it as a batch at the end of execution
+* LOG_CLEAR - whether to clean up the directory from old files
 
-## Описание работы
+When initializing the class, you can pass an array with the following keys for configuration:
+* log_root_dir - path to the root directory
+* log_path - path to the logs directory relative to the root directory
+* log_dir - name of the logs directory
+* log_name - name of the log file
+* log_max_size - maximum log file size in megabytes (MB)
+* log_time - number of days for which logs are kept
+* log_level - log level
+* log_save_now - whether to save the log immediately or at the end of execution
+* log_system_info - amount of service information included in the log ('full', 'advanced', 'simple')
+* log_clear - whether to clean up the directory from old files
 
-### Подключение файла класса
+## Usage
+
+### Including the class file
 ```php
 require_once("Base.php");
 require_once("FLog.php");
 ```
-или с использованием composer
+or using Composer
 ```php
 require_once("vendor/autoload.php");
 ```
 ---
-### Инициализация класса
+### Initializing the class
 ```php
 $LOG = new Toropyga\FLog();
 ```
+or
+```php
+$config = array();
+$config['log_name'] = 'my.log';
+$config['log_clear'] = true;
+$config['log_level'] = 'debug';
+$config['log_system_info'] = 'full';
+
+$LOG = new Toropyga\FLog($config);
+```
 ---
-### Настройка параметров
-Настройка объёма служебной информации в логе.
-Может принимать значения:
+### Setting parameters
+Configure the amount of service information included in the log.
+Accepted values:
 * **simple** - date, level, uri
 * **advanced** - ip, date, level, uri
 * **full** - ip, date, level, uri, user agent
@@ -72,42 +95,42 @@ $LOG = new Toropyga\FLog();
 $LOG->setSystemInfo('advanced');
 ```
 ---
-Установка уровня логов.
-Может принимать значения: emergency, alert, critical, error, warning, notice, info, debug 
+Set the log level.
+Accepted values: emergency, alert, critical, error, warning, notice, info, debug
 ```php
 $LOG->setLogLevel('error');
 ```
 ---
-Установка имени файла для записи логов
+Set the file name used for writing logs
 ```php
 $LOG->setName ($file);
 ```
 ---
-Установка способа сохранения логов.
+Set the log storage method.
 
-На вход может принимать на вход числа от 0 до 6 или строку (file - в файл, stdout - система, db - база данных)
+Accepts a number from 0 to 6, or a string (file - to a file, stdout - to the system output, db - to a database)
 
-Числа:
-*  0 - сохранять в файл
-*  1 - сохранять в STDOUT
-*  2 - сохранять в БД
-*  3 - сохранять в файл и STDOUT
-*  4 - сохранять в файл и БД
-*  5 - сохранять в STDOUT и БД
-*  6 - сохранять в файл, STDOUT и БД
+Numbers:
+*  0 - save to a file
+*  1 - save to STDOUT
+*  2 - save to a database
+*  3 - save to a file and STDOUT
+*  4 - save to a file and a database
+*  5 - save to STDOUT and a database
+*  6 - save to a file, STDOUT, and a database
 
-Если на вход подаётся не число, а строка, то в ней может быть казано несколько типов, разделённых запятой в любом порядке ('file, db')
+If a string is passed instead of a number, it can list several types separated by commas in any order ('file, db')
 
-По умолчанию сохраняет только в файл.
+By default, logs are saved to a file only.
 ```php
 $LOG->setSaveType(4);
 ```
-или
+or
 ```php
 $LOG->setSaveType('file,db');
 ```
 ---
-Подключение базы данных для записи логов в базу данных
+Connecting a database for writing logs to a database
 ```php
 use Toropyga\DB;
 $DB = new DB\MySQL();
@@ -115,73 +138,72 @@ $LOG->setDB($DB);
 ```
 ---
 
-### Сохранение строки логов
-Предварительные данные лога.
+### Saving a log line
+Preliminary log data.
 
-*В тексте лога возможна подстановка. Подстановочная переменная выделяется фигурными скобками.
-Подстановка осуществляется значениями из массива context по ключу, соответствующему имени подстановочной переменной без фигурных скобок. ([см. документацию п.1.2](https://www.php-fig.org/psr/psr-3/))*
+*The log text supports placeholder substitution. A placeholder variable is enclosed in curly braces.
+Substitution is performed using values from the context array, keyed by the name of the placeholder variable without the curly braces. ([see the documentation, section 1.2](https://www.php-fig.org/psr/psr-3/))*
 ```php
 $message = "log text for {user}";
-$context = array("user" => "you", "other" => "Other information"); // необязательный параметр
+$context = array("user" => "you", "other" => "Other information"); // optional parameter
 ```
 
-Лог уровня **debug**
+**debug** level log
 ```php
 $LOG->debug($message, $context);
 ```
-Лог уровня **info**
+**info** level log
 ```php
 $LOG->info($message, $context);
 ```
-Лог уровня **notice**
+**notice** level log
 ```php
 $LOG->notice($message, $context);
 ```
-Лог уровня **warning**
+**warning** level log
 ```php
 $LOG->warning($message, $context);
 ```
-Лог уровня **error**
+**error** level log
 ```php
 $LOG->error($message, $context);
 ```
-Лог уровня **critical**
+**critical** level log
 ```php
 $LOG->critical($message, $context);
 ```
-Лог уровня **alert**
+**alert** level log
 ```php
 $LOG->alert($message, $context);
 ```
-Лог уровня **emergency**
+**emergency** level log
 ```php
 $LOG->emergency($message, $context);
 ```
 ---
-Также возможен общий вариант с указанием уровня логов
+A generic variant is also available, with the log level specified explicitly
 ```php
 $level = "debug";
 $message = "log text for {user}";
-$context = array("user" => "you"); // необязательный параметр
-$LOG->log($level, $message, $context); // сохраняем лог
+$context = array("user" => "you"); // optional parameter
+$LOG->log($level, $message, $context); // save the log
 ```
 ---
-Можно использовать устаревший вариант
+You can use the legacy variant
 ```php
 $message = "log text";
 $file = "file_log_name";
-$LOG->set2Log($message, $file); // сохраняем лог
+$LOG->set2Log($message, $file); // save the log
 ```
 ---
-### Сохранение массива логов
+### Saving an array of logs
 ```php
-$LOG->setLevel('debug'); // устанавливаем, если необходимо, уровень логов
+$LOG->setLevel('debug'); // set the log level, if needed
 
 $logs = array();
 $logs['log'][] = "log text line 1";
 $logs['log'][] = "log text line 2";
 $logs['log'][] = "log text line 3";
 $logs['file'] = "file_log_name";
-$LOG->setArray2Log($logs); // сохраняем лог
+$LOG->setArray2Log($logs); // save the log
 ```
-
