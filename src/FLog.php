@@ -2,7 +2,7 @@
 /**
  * Logging class
  * @author Yuri Frantsevich
- * @version 4.1.0
+ * @version 4.1.1
  * @copyright 2018-2026
  */
 declare(strict_types=1);
@@ -470,11 +470,13 @@ class FLog implements LoggerInterface {
             'db,stdout,file'    => 6,
             'db,file,stdout'    => 6,
         );
-        $type = preg_replace("/\s/", "", $type);
-        if (in_array($type, array_keys($types))) $type = $types[$type];
-        if (preg_match("/^\d+$/", $type) && in_array((int)$type, array(0,1,2,3,4,5,6))) {
-            $this->saveType = $type;
+        if (is_string($type)) {
+            $type = preg_replace("/\s/", "", $type);
+            if (in_array($type, array_keys($types))) $type = $types[$type];
+            else $type = 0;
         }
+        if (is_int((int)$type) && in_array((int)$type, array(0,1,2,3,4,5,6))) $this->saveType = $type;
+        else $this->saveType = 0;
     }
 
     /**
